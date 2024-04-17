@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 public class Servidor implements  Runnable{
@@ -14,12 +15,13 @@ public class Servidor implements  Runnable{
     public AES aes;
     private boolean conexao = true;
     private Banco banco = new Banco();
+    byte[] salt = HashPassword.getSalt();
 
     private ObjectOutputStream saidaStream;
 
     private ObjectInputStream entradaStream;
 
-    public Servidor(Socket cliente){
+    public Servidor(Socket cliente) throws NoSuchAlgorithmException {
 
         this.socketCliente = cliente;
         Cadastro cadastro = new Cadastro("1", "senha1", "00000000000", "nome", "endereco", "telefone");
@@ -51,17 +53,18 @@ public class Servidor implements  Runnable{
             Mensagem mensagem;
 
             mensagem = (Mensagem) entradaStream.readObject();
-            System.out.println(mensagem.getAcao() + " " + mensagem.getMensagem());
-            String[] mensagemChave = mensagem.getMensagem().split(",");
-            long p = Long.parseLong(mensagemChave[0]);
-            long g = Long.parseLong(mensagemChave[1]);
-            long b = new Random().nextInt(100);
-            long B = expMod(g, b, p);
-            secretKey = expMod(Long.parseLong(mensagemChave[2]), b, p) + "";
+//            System.out.println(mensagem.getAcao() + " " + mensagem.getMensagem());
+//            String[] mensagemChave = mensagem.getMensagem().split(",");
+//            long p = Long.parseLong(mensagemChave[0]);
+//            long g = Long.parseLong(mensagemChave[1]);
+//            long b = new Random().nextInt(100);
+//            long B = expMod(g, b, p);
+//            secretKey = expMod(Long.parseLong(mensagemChave[2]), b, p) + "";
+            secretKey = mensagem.getMensagem();
             System.out.println("Chave secreta: " + secretKey);
             aes = new AES(secretKey);
-            mensagem = new Mensagem("0", B + "");
-            saidaStream.writeObject(mensagem);
+//            mensagem = new Mensagem("0", B + "");
+//            saidaStream.writeObject(mensagem);
             while (conexao){
                 mensagem = (Mensagem) entradaStream.readObject();
                 System.out.println(socketCliente.getInetAddress().getHostAddress() + " : " + mensagem);
@@ -193,7 +196,8 @@ public class Servidor implements  Runnable{
                         info = mensagemArray[0].split(";");
                         String contaNova = random.nextInt(1000000) + "";
 //                        senha = Hmac.hMac(secretKey, info[4]);
-                        senha = HashPassword.getSenhaSegura(info[4]);
+                        senha = HashPassword.getSenhaSegura(info[4], salt);
+                        System.out.println("Senha Cadastro: " + senha);
                         Cadastro cadastro = new Cadastro(contaNova, senha, info[1], info[0], info[2], info[3]);
                         Conta conta = new Conta(contaNova, 0.0);
                         banco.addCadastro(cadastro);
@@ -217,7 +221,8 @@ public class Servidor implements  Runnable{
                         }
                         info = mensagemArray[0].split(";");
 //                        senha = Hmac.hMac(secretKey, info[1]);
-                        senha = HashPassword.getSenhaSegura(info[1]);
+                        senha = HashPassword.getSenhaSegura(info[1], salt);
+                        System.out.println("Senha Autenticacao: " + senha);
                         String cadastroExiste = banco.checkCadastro(info[0], senha);
                         if(cadastroExiste.equals("autenticado")){
                             mensagem = new Mensagem("9", "Autenticado");

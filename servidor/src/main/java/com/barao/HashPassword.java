@@ -5,10 +5,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
 public class HashPassword {
-    public static String getSenhaSegura(String senha) {
+
+    public static String getSenhaSegura(String senha, byte[] salt) {
         String senhaGerada = null;
         try {
-            byte[] salt = getSalt();
             MessageDigest md = MessageDigest.getInstance("SHA-512");
             md.update(salt);
             byte[] bytes = md.digest(senha.getBytes());

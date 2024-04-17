@@ -18,7 +18,7 @@ public class Firewall implements Runnable {
     int errorLimit = 3;
     long timeStart;
     long timeEnd;
-    double timeWaiting = 8000;
+    double timeWaiting = 10000;
     private boolean conexao = true;
     private String keyPublica;
     private String keyPrivada;
@@ -39,8 +39,6 @@ public class Firewall implements Runnable {
             entradaServidor = new ObjectInputStream(clienteServidor.getInputStream());
             saidaServidor = new ObjectOutputStream(clienteServidor.getOutputStream());
             gerarChave();
-            mensagem = (Mensagem) entrada.readObject();
-            System.out.println("Mensagem recebida: " + mensagem.getMensagem());
             saidaServidor.writeObject(new Mensagem("Chave privada", keyPrivada));
             saida.writeObject(new Mensagem("Chave publica", keyPublica));
             while (conexao){
@@ -62,6 +60,13 @@ public class Firewall implements Runnable {
                     conexao = false;
                 }
 
+                if(mensagem.getAcao().equals("10")){
+                    saida.writeObject(new Mensagem("Erro", "Tentativa de acesso a banco de dados bloqueado pelo firewall"));
+                    conexao = false;
+                    saidaServidor.writeObject(new Mensagem("0", ""));
+                    continue;
+                }
+
                 if(checkSqlInjection(mensagem.getMensagem())) {
                     saida.writeObject(new Mensagem("Erro", "SQL Injection detectado"));
                 }
@@ -74,7 +79,6 @@ public class Firewall implements Runnable {
                     if(errorCount == errorLimit){
                         timeStart = System.currentTimeMillis();
                         saida.writeObject(new Mensagem("Erro", "Limite de tentativas excedido"));
-                        conexao = false;
                     } else {
                         saida.writeObject(mensagem);
                     }
@@ -91,12 +95,17 @@ public class Firewall implements Runnable {
     }
 
     private boolean checkIfReturnedError(Mensagem mensagem) {
-        return mensagem.getMensagem().contains("Incorreta");
+        return mensagem.getMensagem().contains("incorreta");
     }
 
     private boolean checkSqlInjection(String mensagem){
         return mensagem.contains("select") || mensagem.contains("delete")
                 || mensagem.contains("update") || mensagem.contains("insert");
+    }
+
+    private boolean checkIfActionIfValid(String acao){
+        int acaoInt = Integer.parseInt(acao);
+        return acaoInt >= 0 && acaoInt <= 9;
     }
 
     public void gerarChave() throws IOException, ClassNotFoundException {

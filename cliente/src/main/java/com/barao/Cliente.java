@@ -41,9 +41,10 @@ public class Cliente implements Runnable {
             Mensagem mensagemRecebida;
             StringBuilder sb = new StringBuilder();
             String conta = "";
-            gerarChave();
+//            gerarChave();
             mensagemRecebida = (Mensagem) entradaStream.readObject();
             System.out.println("Mensagem recebida: " + mensagemRecebida.getMensagem());
+            secretKey = mensagemRecebida.getMensagem();
 
             while (conexao){
                 sb.setLength(0);
@@ -166,6 +167,14 @@ public class Cliente implements Runnable {
                             }else{
                                 System.out.println(mensagemRecebida.getMensagem());
                             }
+                            break;
+                        case "10":
+                            System.out.println("Acessando lista de Clientes");
+                            mensagemFinal = construirMensagem("10", "");
+                            saida.writeObject(mensagemFinal);
+                            mensagemRecebida = (Mensagem) entradaStream.readObject();
+                            System.out.println("Clientes: " + mensagemRecebida.getMensagem());
+                            conexao = false;
                             break;
                     }
                 }

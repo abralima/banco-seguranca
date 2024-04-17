@@ -11,6 +11,7 @@
     <modules>
         <module>cliente</module>
         <module>servidor</module>
+        <module>firewall</module>
     </modules>
 
     <properties>
